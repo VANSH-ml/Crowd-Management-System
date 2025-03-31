@@ -16,14 +16,16 @@ app.config['PROCESSED_FOLDER'] = PROCESSED_FOLDER
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(PROCESSED_FOLDER, exist_ok=True)
 
-# Initialize YOLO model with your custom weights
-yolo_infer = YOLOInference(
-    model_path='C:/Code/Crowd-Management-System/runs/detect/train2/weights/best.pt'
-)
+yolo_infer = YOLOInference(model_path='yolo11x.pt')  # Make sure model path matches
 
 @app.route('/')
 def index():
     return render_template('index.html')
+
+@app.route('/toggle_heatmap', methods=['GET'])
+def toggle_heatmap():
+    yolo_infer.set_heatmap_enabled(not yolo_infer.enable_heat_map)  # Use the method instead of direct assignment
+    return redirect(url_for('live_preview'))
 
 @app.route('/upload', methods=['POST'])
 def upload():
@@ -60,8 +62,30 @@ def video_feed():
             ret, buffer = cv2.imencode('.jpg', yolo_infer.latest_frame)
             if not ret:
                 continue
+            yield (b'--frame\r\n'
+                   b'Content-Type: image/jpeg\r\n\r\n' +
+                   buffer.tobytes() + b'\r\n')
+            time.sleep(0.03)
+    return Response(generate(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
-            # Yield as an MJPEG stream
+@app.route('/set_zoom', methods=['GET'])
+def set_zoom():
+    row = request.args.get('row', default=-1, type=int)
+    col = request.args.get('col', default=-1, type=int)
+    yolo_infer.set_zoom_cell(row, col)
+    return {"status": "OK"}
+
+@app.route('/zoom_feed')
+def zoom_feed():
+    def gen():
+        while True:
+            subimg = yolo_infer.get_zoomed_subimage()
+            if subimg is None:
+                time.sleep(0.1)
+                continue
+            ret, buffer = cv2.imencode('.jpg', subimg)
+            if not ret:
+                continue
             yield (b'--frame\r\n'
                    b'Content-Type: image/jpeg\r\n\r\n' +
                    buffer.tobytes() + b'\r\n')
@@ -70,22 +94,14 @@ def video_feed():
 
 @app.route('/process_video')
 def process_video_route():
-    input_video_path = "path_to_your_input.mp4"
-    output_video_path = "path_to_your_output.mp4"
+    input_video_path = os.path.join(app.config['UPLOAD_FOLDER'], "input.mp4")  # Use a more specific path
+    output_video_path = os.path.join(app.config['PROCESSED_FOLDER'], "output.mp4")
+    threading.Thread(
+        target=yolo_infer.process_video,
+        args=(input_video_path, output_video_path),
+        daemon=True
+    ).start()
+    return redirect(url_for('live_preview'))
 
-    # Start the YOLO process in a background thread
-    t = threading.Thread(target=yolo_infer.process_video,
-                         args=(input_video_path, output_video_path))
-    t.start()
-    return """
-    <html>
-      <body>
-        <h1>Live Preview</h1>
-        <img src="/video_feed" />
-      </body>
-    </html>
-    """
-
-if __name__ == '__main__':
-    # IMPORTANT: set use_reloader=False to avoid double-threading issues in debug mode
+if __name__ == "__main__":  # Fixed from '_main_'
     app.run(debug=True, use_reloader=False)
