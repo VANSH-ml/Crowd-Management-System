@@ -16,17 +16,14 @@ app.config['PROCESSED_FOLDER'] = PROCESSED_FOLDER
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(PROCESSED_FOLDER, exist_ok=True)
 
-yolo_infer = YOLOInference(model_path='C:/Code/Crowd-Management-System/runs/detect/train2/weights/best.pt')
+# Initialize YOLO model with your custom weights
+yolo_infer = YOLOInference(
+    model_path='C:/Code/Crowd-Management-System/runs/detect/train2/weights/best.pt'
+)
 
 @app.route('/')
 def index():
     return render_template('index.html')
-
-@app.route('/toggle_heatmap', methods=['GET'])
-def toggle_heatmap():
-    yolo_infer.enable_heat_map = not yolo_infer.enable_heat_map
-    print(f"[INFO] Heat map toggled to: {yolo_infer.enable_heat_map}")
-    return redirect(url_for('live_preview'))
 
 @app.route('/upload', methods=['POST'])
 def upload():
@@ -63,34 +60,8 @@ def video_feed():
             ret, buffer = cv2.imencode('.jpg', yolo_infer.latest_frame)
             if not ret:
                 continue
-            yield (b'--frame\r\n'
-                   b'Content-Type: image/jpeg\r\n\r\n' +
-                   buffer.tobytes() + b'\r\n')
-            time.sleep(0.03)
-    return Response(generate(), mimetype='multipart/x-mixed-replace; boundary=frame')
 
-@app.route('/set_zoom', methods=['GET'])
-def set_zoom():
-    row = request.args.get('row', default=-1, type=int)
-    col = request.args.get('col', default=-1, type=int)
-    yolo_infer.set_zoom_cell(row, col)
-    return {"status": "OK"}
-
-@app.route('/zoom_feed')
-def zoom_feed():
-    """
-    Streams the subimage from yolo_infer.get_zoomed_subimage().
-    """
-    def gen():
-        while True:
-            subimg = yolo_infer.get_zoomed_subimage()
-            if subimg is None:
-                # no cell or invalid subimage
-                time.sleep(0.1)
-                continue
-            ret, buffer = cv2.imencode('.jpg', subimg)
-            if not ret:
-                continue
+            # Yield as an MJPEG stream
             yield (b'--frame\r\n'
                    b'Content-Type: image/jpeg\r\n\r\n' +
                    buffer.tobytes() + b'\r\n')
@@ -101,11 +72,11 @@ def zoom_feed():
 def process_video_route():
     input_video_path = "path_to_your_input.mp4"
     output_video_path = "path_to_your_output.mp4"
-    threading.Thread(
-        target=yolo_infer.process_video,
-        args=(input_video_path, output_video_path),
-        daemon=True
-    ).start()
+
+    # Start the YOLO process in a background thread
+    t = threading.Thread(target=yolo_infer.process_video,
+                         args=(input_video_path, output_video_path))
+    t.start()
     return """
     <html>
       <body>
@@ -116,4 +87,5 @@ def process_video_route():
     """
 
 if __name__ == '__main__':
+    # IMPORTANT: set use_reloader=False to avoid double-threading issues in debug mode
     app.run(debug=True, use_reloader=False)

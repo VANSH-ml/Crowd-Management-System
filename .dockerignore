@@ -1,0 +1,27 @@
+# Ignore the dataset folder (since you’ll copy it directly to the DGX system)
+dataset/
+
+# Ignore virtual environment folder
+venv/
+
+# Ignore Python cache files
+__pycache__/
+*.pyc
+
+# Ignore YOLO model weights (you can copy these to the DGX system separately if needed)
+yolo11n.pt
+yolo11x.pt
+
+# Ignore training outputs
+runs/
+snapshots/
+
+# Ignore Git-related files
+.git/
+.gitignore
+
+# Ignore VSCode settings
+.vscode/
+
+# Ignore other unnecessary files
+*.md
