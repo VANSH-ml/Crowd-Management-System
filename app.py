@@ -16,7 +16,7 @@ app.config['PROCESSED_FOLDER'] = PROCESSED_FOLDER
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(PROCESSED_FOLDER, exist_ok=True)
 
-yolo_infer = YOLOInference(model_path='C:/Code/Crowd-Management-System/runs/detect/train2/weights/best.pt')
+yolo_infer = YOLOInference(model_path='yolo11x.pt')  # Make sure model path matches
 
 @app.route('/')
 def index():
@@ -24,8 +24,7 @@ def index():
 
 @app.route('/toggle_heatmap', methods=['GET'])
 def toggle_heatmap():
-    yolo_infer.enable_heat_map = not yolo_infer.enable_heat_map
-    print(f"[INFO] Heat map toggled to: {yolo_infer.enable_heat_map}")
+    yolo_infer.set_heatmap_enabled(not yolo_infer.enable_heat_map)  # Use the method instead of direct assignment
     return redirect(url_for('live_preview'))
 
 @app.route('/upload', methods=['POST'])
@@ -78,14 +77,10 @@ def set_zoom():
 
 @app.route('/zoom_feed')
 def zoom_feed():
-    """
-    Streams the subimage from yolo_infer.get_zoomed_subimage().
-    """
     def gen():
         while True:
             subimg = yolo_infer.get_zoomed_subimage()
             if subimg is None:
-                # no cell or invalid subimage
                 time.sleep(0.1)
                 continue
             ret, buffer = cv2.imencode('.jpg', subimg)
@@ -99,21 +94,14 @@ def zoom_feed():
 
 @app.route('/process_video')
 def process_video_route():
-    input_video_path = "path_to_your_input.mp4"
-    output_video_path = "path_to_your_output.mp4"
+    input_video_path = os.path.join(app.config['UPLOAD_FOLDER'], "input.mp4")  # Use a more specific path
+    output_video_path = os.path.join(app.config['PROCESSED_FOLDER'], "output.mp4")
     threading.Thread(
         target=yolo_infer.process_video,
         args=(input_video_path, output_video_path),
         daemon=True
     ).start()
-    return """
-    <html>
-      <body>
-        <h1>Live Preview</h1>
-        <img src="/video_feed" />
-      </body>
-    </html>
-    """
+    return redirect(url_for('live_preview'))
 
-if __name__ == '__main__':
+if __name__ == "__main__":  # Fixed from '_main_'
     app.run(debug=True, use_reloader=False)
