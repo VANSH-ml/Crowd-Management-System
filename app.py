@@ -2,58 +2,70 @@ import os
 import cv2
 import time
 import threading
-from flask import Flask, render_template, request, redirect, url_for, Response
+import uvicorn
+from fastapi import FastAPI, Request, File, UploadFile, HTTPException, Query
+from fastapi.responses import HTMLResponse, StreamingResponse, RedirectResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 from yolo_inference import YOLOInference
 
-app = Flask(__name__)
+app = FastAPI()
 
-UPLOAD_FOLDER = os.path.join(app.root_path, 'static', 'uploads')
-PROCESSED_FOLDER = os.path.join(app.root_path, 'static', 'processed')
-
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.config['PROCESSED_FOLDER'] = PROCESSED_FOLDER
+# Setup directories
+UPLOAD_FOLDER = os.path.join(os.getcwd(), 'static', 'uploads')
+PROCESSED_FOLDER = os.path.join(os.getcwd(), 'static', 'processed')
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs(PROCESSED_FOLDER, exist_ok=True)
 
-yolo_infer = YOLOInference(model_path='yolo11x.pt')  # Make sure model path matches
+# Mount static files
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
-@app.route('/')
-def index():
-    return render_template('index.html')
+# Setup templates
+templates = Jinja2Templates(directory="templates")
 
-@app.route('/toggle_heatmap', methods=['GET'])
-def toggle_heatmap():
-    yolo_infer.set_heatmap_enabled(not yolo_infer.enable_heat_map)  # Use the method instead of direct assignment
-    return redirect(url_for('live_preview'))
+# Initialize YOLO
+yolo_infer = YOLOInference(model_path='yolo11x.pt')
 
-@app.route('/upload', methods=['POST'])
-def upload():
-    if 'video' not in request.files:
-        return {"message": "No file found in request"}, 400
-    video_file = request.files['video']
-    if video_file.filename == '':
-        return {"message": "No filename provided"}, 400
+@app.get("/", response_class=HTMLResponse)
+async def index(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request})
 
-    video_path = os.path.join(app.config['UPLOAD_FOLDER'], video_file.filename)
-    video_file.save(video_path)
+@app.get("/toggle_heatmap")
+async def toggle_heatmap():
+    yolo_infer.set_heatmap_enabled(not yolo_infer.enable_heat_map)
+    return RedirectResponse(url="/live_preview", status_code=302)
 
-    processed_filename = f"processed_{video_file.filename}"
-    processed_path = os.path.join(app.config['PROCESSED_FOLDER'], processed_filename)
+@app.post("/upload")
+async def upload(video: UploadFile = File(...)):
+    if not video.filename:
+        raise HTTPException(status_code=400, detail="No filename provided")
+    
+    video_path = os.path.join(UPLOAD_FOLDER, video.filename)
+    
+    # Save uploaded file
+    with open(video_path, "wb") as buffer:
+        content = await video.read()
+        buffer.write(content)
+    
+    processed_filename = f"processed_{video.filename}"
+    processed_path = os.path.join(PROCESSED_FOLDER, processed_filename)
+    
+    # Start processing in background thread
     threading.Thread(
         target=yolo_infer.process_video,
         args=(video_path, processed_path),
         daemon=True
     ).start()
+    
+    return {"message": "File uploaded successfully"}
 
-    return {"message": "File uploaded successfully"}, 200
+@app.get("/live_preview", response_class=HTMLResponse)
+async def live_preview(request: Request):
+    return templates.TemplateResponse("live_preview.html", {"request": request})
 
-@app.route('/live_preview')
-def live_preview():
-    return render_template('live_preview.html')
-
-@app.route('/video_feed')
-def video_feed():
+@app.get("/video_feed")
+async def video_feed():
     def generate():
         while True:
             if yolo_infer.latest_frame is None:
@@ -66,17 +78,16 @@ def video_feed():
                    b'Content-Type: image/jpeg\r\n\r\n' +
                    buffer.tobytes() + b'\r\n')
             time.sleep(0.03)
-    return Response(generate(), mimetype='multipart/x-mixed-replace; boundary=frame')
+    
+    return StreamingResponse(generate(), media_type='multipart/x-mixed-replace; boundary=frame')
 
-@app.route('/set_zoom', methods=['GET'])
-def set_zoom():
-    row = request.args.get('row', default=-1, type=int)
-    col = request.args.get('col', default=-1, type=int)
+@app.get("/set_zoom")
+async def set_zoom(row: int = Query(default=-1), col: int = Query(default=-1)):
     yolo_infer.set_zoom_cell(row, col)
     return {"status": "OK"}
 
-@app.route('/zoom_feed')
-def zoom_feed():
+@app.get("/zoom_feed")
+async def zoom_feed():
     def gen():
         while True:
             subimg = yolo_infer.get_zoomed_subimage()
@@ -90,18 +101,21 @@ def zoom_feed():
                    b'Content-Type: image/jpeg\r\n\r\n' +
                    buffer.tobytes() + b'\r\n')
             time.sleep(0.03)
-    return Response(gen(), mimetype='multipart/x-mixed-replace; boundary=frame')
+    
+    return StreamingResponse(gen(), media_type='multipart/x-mixed-replace; boundary=frame')
 
-@app.route('/process_video')
-def process_video_route():
-    input_video_path = os.path.join(app.config['UPLOAD_FOLDER'], "input.mp4")  # Use a more specific path
-    output_video_path = os.path.join(app.config['PROCESSED_FOLDER'], "output.mp4")
+@app.get("/process_video")
+async def process_video_route():
+    input_video_path = os.path.join(UPLOAD_FOLDER, "input.mp4")
+    output_video_path = os.path.join(PROCESSED_FOLDER, "output.mp4")
+    
     threading.Thread(
         target=yolo_infer.process_video,
         args=(input_video_path, output_video_path),
         daemon=True
     ).start()
-    return redirect(url_for('live_preview'))
+    
+    return RedirectResponse(url="/live_preview", status_code=302)
 
-if __name__ == "__main__":  # Fixed from '_main_'
-    app.run(debug=True, use_reloader=False)
+if __name__ == "__main__":
+    uvicorn.run(app, host="0.0.0.0", port=8000, reload=True)
