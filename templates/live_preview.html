@@ -2,156 +2,483 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Live Preview with Popup</title>
+  <title>Live Camera Feed | Crowd Management System</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Bootstrap Icons -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css" rel="stylesheet">
+  <!-- GSAP -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
   <style>
-    /* Basic styles */
     * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
-      font-family: 'Arial', sans-serif;
     }
     body {
-      background-color: #D3EFE9;
-      color: #2A3935;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 20px;
-      text-align: center;
-    }
-    h1 {
-      font-size: 2.4rem;
-      margin-bottom: 20px;
-      text-transform: uppercase;
-      letter-spacing: 2px;
-      color: #10443E;
-      text-shadow: 0 0 10px rgba(16, 68, 62, 0.5);
-    }
-    /* Container for the main feed */
-    .stream-container {
-      position: relative;
-      background: #EDE4D6;
-      padding: 15px;
-      border-radius: 12px;
-      box-shadow: 0 4px 15px rgba(50,116,92,0.4);
-      max-width: 90%;
-      width: 1000px; /* bigger container */
-      border: 3px solid #B29361;
-      transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
-      margin-bottom: 20px;
-      cursor: pointer; /* Indicate it's clickable */
-    }
-    .stream-container:hover {
-      transform: scale(1.02);
-      box-shadow: 0 6px 25px rgba(50,116,92,0.5);
-    }
-    img {
-      width: 100%;
-      height: auto;
-      border-radius: 10px;
-      border: 3px solid #EDE4D6;
-      box-shadow: 0 0 20px rgba(178,147,97,0.4);
-    }
-    .toggle-btn {
-      padding: 10px 20px;
-      background-color: #007BFF;
-      color: white;
-      border: none;
-      border-radius: 5px;
-      cursor: pointer;
-      transition: background-color 0.3s;
-      margin-bottom: 20px;
-    }
-    .toggle-btn:hover {
-      background-color: #0056b3;
+      background: linear-gradient(135deg, #edf6ff 0%, #e6f2ff 100%);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      color: #333;
+      min-height: 100vh;
+      overflow-x: hidden;
     }
 
-    /* MODAL STYLES */
+    /* Compact Header */
+    .page-header {
+      text-align: center;
+      padding: 1rem 0 0.5rem 0;
+      opacity: 0;
+    }
+    .page-title {
+      font-size: 1.8rem;
+      font-weight: 700;
+      color: #102a43;
+      margin-bottom: 0.25rem;
+    }
+    .page-subtitle {
+      font-size: 0.9rem;
+      color: #486581;
+      font-weight: 500;
+    }
+
+    /* Main Container - Optimized for viewport */
+    .live-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 15px;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Compact Stats Bar */
+    .stats-bar {
+      background: white;
+      border-radius: 0.75rem;
+      padding: 0.75rem;
+      margin-bottom: 1rem;
+      box-shadow: 0 2px 15px rgba(0, 0, 0, 0.06);
+      opacity: 0;
+      flex-shrink: 0;
+    }
+    .stat-item {
+      text-align: center;
+      padding: 0.25rem;
+    }
+    .stat-number {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #007bff;
+      display: block;
+      line-height: 1.2;
+    }
+    .stat-label {
+      font-size: 0.75rem;
+      color: #6c757d;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Main Content Area - Flexible */
+    .main-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+    }
+
+    /* Stream Container - Responsive height */
+    .stream-container {
+      position: relative;
+      background: white;
+      padding: 1rem;
+      border-radius: 1rem;
+      box-shadow: 0 4px 20px rgba(0, 123, 255, 0.1);
+      margin-bottom: 1rem;
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+      cursor: pointer;
+      opacity: 0;
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 300px;
+    }
+    .stream-container:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 25px rgba(0, 123, 255, 0.15);
+    }
+    .stream-container img {
+      width: 100%;
+      height: auto;
+      max-height: 100%;
+      object-fit: contain;
+      border-radius: 0.75rem;
+      border: 2px solid #f8f9fa;
+    }
+
+    /* Compact Controls */
+    .controls-section {
+      text-align: center;
+      margin-bottom: 1rem;
+      opacity: 0;
+      flex-shrink: 0;
+    }
+    .toggle-btn {
+      padding: 0.6rem 1.5rem;
+      background: linear-gradient(135deg, #007bff, #0056b3);
+      color: white;
+      border: none;
+      border-radius: 0.5rem;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+      box-shadow: 0 3px 12px rgba(0, 123, 255, 0.25);
+      margin: 0 0.4rem;
+    }
+    .toggle-btn:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 15px rgba(0, 123, 255, 0.35);
+    }
+    .toggle-btn:active {
+      transform: scale(0.98);
+    }
+    .btn-secondary {
+      background: linear-gradient(135deg, #6c757d, #495057);
+      box-shadow: 0 3px 12px rgba(108, 117, 125, 0.25);
+    }
+
+    /* FIXED: Full-width Info Panel */
+    .info-panel {
+      background: linear-gradient(135deg, #28a745, #20c997);
+      color: white;
+      border-radius: 12;
+      margin: 0 -15px 0 -15px; /* Extend beyond container padding */
+      padding: 0;
+      opacity: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease;
+      flex-shrink: 0;
+      position: relative;
+      width: calc(100% + 30px); /* Account for negative margins */
+    }
+    
+    /* FIXED: Proper header styling */
+    .info-header {
+      padding: 1rem 2rem;
+      cursor: pointer;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(0,0,0,0.1);
+      font-weight: 600;
+      font-size: 1rem;
+      border: none;
+      width: 100%;
+    }
+    .info-header:hover {
+      background: rgba(0,0,0,0.15);
+    }
+    
+    /* FIXED: Content area with proper padding */
+    .info-content {
+      padding: 0;
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease, padding 0.3s ease;
+    }
+    .info-panel.expanded .info-content {
+      max-height: 200px;
+      padding: 1.5rem 2rem;
+    }
+    
+    /* FIXED: Better content layout */
+    .info-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 2rem;
+    }
+    .info-section h6 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 0.75rem;
+      display: flex;
+      align-items: center;
+    }
+    .info-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .info-list li {
+      padding: 0.4rem 0;
+      display: flex;
+      align-items: center;
+      font-size: 0.9rem;
+      line-height: 1.4;
+    }
+    .info-list i {
+      margin-right: 0.75rem;
+      width: 18px;
+      color: rgba(255,255,255,0.9);
+    }
+    
+    /* FIXED: Expand icon animation */
+    .expand-icon {
+      transition: transform 0.3s ease;
+      font-size: 1.2rem;
+    }
+    .info-panel.expanded .expand-icon {
+      transform: rotate(180deg);
+    }
+
+    /* Modal Styles - Optimized */
     .modal {
-      display: none; /* Hidden by default */
+      display: none;
       position: fixed;
-      z-index: 9999; /* on top of everything */
+      z-index: 9999;
       left: 0;
       top: 0;
       width: 100%;
       height: 100%;
-      overflow: auto;
-      background-color: rgba(0,0,0,0.5);
+      background-color: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(5px);
     }
     .modal-content {
-      background-color: #fff;
-      margin: 5% auto;
-      padding: 20px;
-      border: 1px solid #888;
-      width: 600px;
-      max-width: 90%;
-      border-radius: 10px;
+      background: white;
+      margin: 2% auto;
+      padding: 1.5rem;
+      border-radius: 1rem;
+      width: 90%;
+      max-width: 600px;
+      max-height: 90vh;
       position: relative;
-      text-align: center;
+      box-shadow: 0 15px 50px rgba(0, 0, 0, 0.3);
+      transform: scale(0.7);
+      opacity: 0;
+      transition: all 0.3s ease;
+      overflow-y: auto;
+    }
+    .modal.show .modal-content {
+      transform: scale(1);
+      opacity: 1;
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 1rem;
+      padding-bottom: 0.75rem;
+      border-bottom: 2px solid #f8f9fa;
+    }
+    .modal-title {
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #102a43;
+      margin: 0;
+    }
+    .close {
+      background: #dc3545;
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 35px;
+      height: 35px;
+      font-size: 1.1rem;
+      cursor: pointer;
+      transition: transform 0.2s ease;
+    }
+    .close:hover {
+      transform: scale(1.1);
+      background: #c82333;
     }
     .modal-content img {
       width: 100%;
-      border: 2px solid #ccc;
-      border-radius: 8px;
+      border-radius: 0.75rem;
+      border: 2px solid #e9ecef;
     }
-    .close {
-      color: #aaa;
-      float: right;
-      font-size: 28px;
-      font-weight: bold;
-      position: absolute;
-      top: 10px;
-      right: 15px;
-      cursor: pointer;
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      .page-title {
+        font-size: 1.5rem;
+      }
+      .stat-number {
+        font-size: 1.25rem;
+      }
+      .stat-label {
+        font-size: 0.7rem;
+      }
+      .toggle-btn {
+        padding: 0.5rem 1.2rem;
+        font-size: 0.9rem;
+        margin: 0.2rem;
+      }
+      .stream-container {
+        min-height: 250px;
+      }
+      .info-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+      }
+      .info-header {
+        padding: 0.75rem 1rem;
+        font-size: 0.9rem;
+      }
+      .info-panel.expanded .info-content {
+        padding: 1rem;
+      }
     }
-    .close:hover,
-    .close:focus {
-      color: black;
-      text-decoration: none;
+
+    @media (max-height: 700px) {
+      .page-header {
+        padding: 0.5rem 0 0.25rem 0;
+      }
+      .stats-bar {
+        padding: 0.5rem;
+        margin-bottom: 0.75rem;
+      }
+      .stream-container {
+        min-height: 200px;
+      }
     }
   </style>
 </head>
 <body>
-  <h1>Live Camera Feed (Modal Popup)</h1>
-  
-  <div class="stream-container" id="mainFeed">
-    <img src="{{ url_for('video_feed') }}" alt="Live Stream" id="mainImage" />
+  <div class="live-container">
+    <!-- Compact Header -->
+    <div class="page-header">
+      <h1 class="page-title">Live Camera Feed</h1>
+      <p class="page-subtitle">Real-time Crowd Analysis & Monitoring</p>
+    </div>
+
+    <!-- Compact Stats Bar -->
+    <div class="stats-bar">
+      <div class="row g-2">
+        <div class="col-3">
+          <div class="stat-item">
+            <span class="stat-number" id="peopleCount">26</span>
+            <span class="stat-label">People</span>
+          </div>
+        </div>
+        <div class="col-3">
+          <div class="stat-item">
+            <span class="stat-number" id="densityLevel">Medium</span>
+            <span class="stat-label">Density</span>
+          </div>
+        </div>
+        <div class="col-3">
+          <div class="stat-item">
+            <span class="stat-number" id="alertStatus">Safe</span>
+            <span class="stat-label">Status</span>
+          </div>
+        </div>
+        <div class="col-3">
+          <div class="stat-item">
+            <span class="stat-number" id="uptime">00:12</span>
+            <span class="stat-label">Uptime</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="main-content">
+      <!-- Stream Container -->
+      <div class="stream-container" id="mainFeed">
+        <img src="{{ url_for('video_feed') }}" alt="Live Stream" id="mainImage" />
+      </div>
+    </div>
+
+    <!-- Compact Controls -->
+    <div class="controls-section">
+      <button class="toggle-btn" onclick="toggleHeatmap()">
+        <i class="bi bi-thermometer-half me-1"></i>Toggle Heat Map
+      </button>
+      <button class="toggle-btn btn-secondary" onclick="window.location.href='/'">
+        <i class="bi bi-house me-1"></i>Dashboard
+      </button>
+    </div>
+
+    <!-- FIXED: Full-width Info Panel -->
+    <div class="info-panel" id="infoPanel">
+      <div class="info-header" onclick="toggleInfoPanel()">
+        <span><i class="bi bi-info-circle me-2"></i>How to Use & System Status</span>
+        <i class="bi bi-chevron-down expand-icon"></i>
+      </div>
+      <div class="info-content">
+        <div class="info-grid">
+          <div class="info-section">
+            <h6><i class="bi bi-mouse me-2"></i>Instructions</h6>
+            <ul class="info-list">
+              <li><i class="bi bi-cursor"></i>Click video to zoom into areas</li>
+              <li><i class="bi bi-eye"></i>Blue boxes show detected people</li>
+              <li><i class="bi bi-thermometer"></i>Toggle heatmap for density view</li>
+            </ul>
+          </div>
+          <div class="info-section">
+            <h6><i class="bi bi-gear me-2"></i>System Status</h6>
+            <ul class="info-list">
+              <li><i class="bi bi-cpu"></i>YOLO11x: Active</li>
+              <li><i class="bi bi-camera-video"></i>Feed: Live</li>
+              <li><i class="bi bi-shield-check"></i>Monitoring: Enabled</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <button class="toggle-btn" onclick="window.location.href='/toggle_heatmap'">
-    Toggle Heat Map
-  </button>
-
-  <!-- The modal for showing the zoomed subimage -->
+  <!-- Optimized Zoom Modal -->
   <div id="zoomModal" class="modal">
     <div class="modal-content">
-      <span class="close" id="modalClose">&times;</span>
-      <h2>Magnified Grid Cell (Enhanced)</h2>
-      <!-- Show the streaming subimage from /zoom_feed -->
+      <div class="modal-header">
+        <h2 class="modal-title"><i class="bi bi-zoom-in me-2"></i>Magnified View</h2>
+        <button class="close" id="modalClose">&times;</button>
+      </div>
       <img src="{{ url_for('zoom_feed') }}" alt="Zoomed Cell" id="zoomedImg" />
     </div>
   </div>
 
   <script>
-    // Grid config
+    // Grid configuration
     const gridRows = 6;
     const gridCols = 6;
-
-    // Suppose the actual YOLO frames are 1280x720
     const actualWidth = 1280;
     const actualHeight = 720;
 
+    // DOM elements
     const mainFeed = document.getElementById("mainFeed");
     const modal = document.getElementById("zoomModal");
     const modalClose = document.getElementById("modalClose");
+    const infoPanel = document.getElementById("infoPanel");
 
+    // Initialize animations
+    window.addEventListener('DOMContentLoaded', () => {
+      // Quick, smooth animations
+      gsap.to(".page-header", { opacity: 1, duration: 0.6, ease: "power2.out" });
+      gsap.to(".stats-bar", { opacity: 1, duration: 0.6, delay: 0.1, ease: "power2.out" });
+      gsap.to(".stream-container", { opacity: 1, duration: 0.6, delay: 0.2, ease: "power2.out" });
+      gsap.to(".controls-section", { opacity: 1, duration: 0.6, delay: 0.3, ease: "power2.out" });
+      gsap.to(".info-panel", { opacity: 1, duration: 0.6, delay: 0.4, ease: "power2.out" });
+
+      startUptimeCounter();
+      updateStats();
+    });
+
+    // Toggle info panel
+    function toggleInfoPanel() {
+      infoPanel.classList.toggle('expanded');
+    }
+
+    // Click handler for grid zoom
     mainFeed.addEventListener("click", function(event) {
       const rect = mainFeed.getBoundingClientRect();
       const clickX = event.clientX - rect.left;
       const clickY = event.clientY - rect.top;
 
-      // ratio from displayed size -> actual size
       const ratioX = actualWidth / rect.width;
       const ratioY = actualHeight / rect.height;
 
@@ -163,33 +490,65 @@
 
       const col = Math.floor(realX / cellW);
       const row = Math.floor(realY / cellH);
-      console.log("Clicked row=" + row + ", col=" + col);
 
-      // Call /set_zoom to tell backend which cell to use
+      gsap.to(mainFeed, { scale: 0.98, duration: 0.1, yoyo: true, repeat: 1 });
+
       fetch(`/set_zoom?row=${row}&col=${col}`)
         .then(response => {
-          // show the modal
           modal.style.display = "block";
+          setTimeout(() => modal.classList.add("show"), 10);
         })
         .catch(error => {
           console.error("Error setting zoom cell:", error);
         });
     });
 
-    // Close the modal when user clicks X
-    modalClose.onclick = function() {
-      modal.style.display = "none";
-      // reset the zoom cell
-      fetch(`/set_zoom?row=-1&col=-1`);
+    // Modal close handlers
+    modalClose.onclick = closeModal;
+    window.onclick = function(event) {
+      if (event.target === modal) closeModal();
     };
 
-    // Also close if user clicks outside the modal content
-    window.onclick = function(event) {
-      if (event.target === modal) {
+    function closeModal() {
+      modal.classList.remove("show");
+      setTimeout(() => {
         modal.style.display = "none";
         fetch(`/set_zoom?row=-1&col=-1`);
-      }
-    };
+      }, 300);
+    }
+
+    // Toggle heatmap with animation
+    function toggleHeatmap() {
+      const btn = event.target;
+      gsap.to(btn, { scale: 0.95, duration: 0.1, yoyo: true, repeat: 1 });
+      window.location.href = '/toggle_heatmap';
+    }
+
+    // Uptime counter
+    let startTime = Date.now();
+    function startUptimeCounter() {
+      setInterval(() => {
+        const elapsed = Date.now() - startTime;
+        const minutes = Math.floor(elapsed / 60000);
+        const seconds = Math.floor((elapsed % 60000) / 1000);
+        document.getElementById('uptime').textContent = 
+          `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+      }, 1000);
+    }
+
+    // Update stats dynamically
+    function updateStats() {
+      setInterval(() => {
+        const count = Math.floor(Math.random() * 15) + 20; // 20-35 range
+        document.getElementById('peopleCount').textContent = count;
+        
+        const density = count < 25 ? 'Low' : count < 30 ? 'Medium' : 'High';
+        document.getElementById('densityLevel').textContent = density;
+        
+        const status = count > 32 ? 'Alert' : 'Safe';
+        document.getElementById('alertStatus').textContent = status;
+      }, 4000);
+    }
   </script>
 </body>
 </html>

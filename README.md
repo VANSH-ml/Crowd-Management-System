@@ -40,16 +40,17 @@ CMS is an advanced crowd management platform designed to enhance safety, efficie
 
 *(Please ensure your screenshot files are in a `screenshots` folder or update paths accordingly)*
 
-![Main Dashboard](./templates/Dashboard.png)  
+![Main Dashboard](./templates/assets/dashboard.png) 
+(./templates/assets/dashboard2.png) 
 *Main dashboard with video upload and feature highlights*
 
-![Live Camera Feed](./templates/Live%20Camera%20Feed.png)  
+![Live Camera Feed](./templates/assets/live_preview.png)  
 *Live camera feed with person detection and tracking*
 
-![Magnified Grid Cell](./templates/Magnified%20Grid%20Cell.png)  
+![Magnified Grid Cell](./templates/assets/magnified.png)  
 *Magnified grid cell for enhanced inspection*
 
-![Heatmap Overlay](./templates/Heatmap%20Overlay.png)  
+![Heatmap Overlay](./templates/assets/heatmap.png)  
 *Heatmap overlay visualizing crowd density*
 
 ---
