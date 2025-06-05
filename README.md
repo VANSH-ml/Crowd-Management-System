@@ -41,7 +41,7 @@ CMS is an advanced crowd management platform designed to enhance safety, efficie
 *(Please ensure your screenshot files are in a `screenshots` folder or update paths accordingly)*
 
 ![Main Dashboard](./templates/assets/dashboard.png) 
-(./templates/assets/dashboard2.png) 
+![Main Dashboard2](./templates/assets/dashboard2.png) 
 *Main dashboard with video upload and feature highlights*
 
 ![Live Camera Feed](./templates/assets/live_preview.png)  
