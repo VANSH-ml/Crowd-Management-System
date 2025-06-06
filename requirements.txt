@@ -11,3 +11,4 @@ jinja2
 python-multipart  # Required for handling file uploads in FastAPI
 deep_sort_realtime 
 setuptools
+scikit-learn

@@ -54,10 +54,21 @@
       font-weight: 500;
       border-radius: 0.5rem;
       transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+      margin: 0.5rem;
     }
     .action-btn:hover {
       transform: translateY(-4px);
       box-shadow: 0 10px 20px rgba(0, 123, 255, 0.2);
+    }
+    .btn-camera {
+      background: linear-gradient(135deg, #28a745, #20c997);
+      color: white;
+      border: none;
+    }
+    .btn-camera:hover {
+      background: linear-gradient(135deg, #218838, #1ea37a);
+      color: white;
+      box-shadow: 0 10px 20px rgba(40, 167, 69, 0.3);
     }
     .feature-card {
       background: white;
@@ -161,8 +172,16 @@
               <span class="tech-badge">Heatmap Generation</span>
               <span class="tech-badge">Safety Alerts</span>
             </div>
-            <a href="#uploadVideoSection" class="btn btn-primary action-btn me-3" id="getStartedBtn">Start Analysis</a>
-            <a href="#features" class="btn btn-outline-primary action-btn">Learn More</a>
+            <!-- Updated Button Section -->
+            <div class="d-flex flex-wrap justify-content-center justify-content-lg-start">
+              <button class="btn btn-camera action-btn" id="liveCameraBtn">
+                <i class="bi bi-camera-video me-2"></i>Start Live Camera
+              </button>
+              <a href="#uploadVideoSection" class="btn btn-primary action-btn" id="getStartedBtn">
+                <i class="bi bi-upload me-2"></i>Upload Video
+              </a>
+              <a href="#features" class="btn btn-outline-primary action-btn">Learn More</a>
+            </div>
           </div>
         </div>
         <!-- Hero SVG -->
@@ -379,7 +398,6 @@
             toggleActions: "play none none none"
           },
           onUpdate: function () {
-            // For decimals (like 99.5), show one decimal place
             if (target.includes('.')) {
               stat.innerText = Number(stat.innerText).toFixed(1);
             }
@@ -411,6 +429,20 @@
           toggleActions: "play none none none"
         }
       });
+    });
+
+    // Live Camera Button Handler
+    document.getElementById('liveCameraBtn').addEventListener('click', function() {
+      gsap.to(this, { scale: 0.95, duration: 0.1, yoyo: true, repeat: 1 });
+      
+      // Show loading state
+      this.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Starting Camera...';
+      this.disabled = true;
+      
+      // Redirect to live camera page
+      setTimeout(() => {
+        window.location.href = '/live_camera';
+      }, 1000);
     });
 
     const videoInput = document.getElementById('videoInput');

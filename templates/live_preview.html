@@ -154,7 +154,7 @@
     .info-panel {
       background: linear-gradient(135deg, #28a745, #20c997);
       color: white;
-      border-radius: 12;
+      border-radius: 12px;
       margin: 0 -15px 0 -15px; /* Extend beyond container padding */
       padding: 0;
       opacity: 0;
@@ -394,8 +394,8 @@
 
     <!-- Compact Controls -->
     <div class="controls-section">
-      <button class="toggle-btn" onclick="toggleHeatmap()">
-        <i class="bi bi-thermometer-half me-1"></i>Toggle Heat Map
+      <button class="toggle-btn" id="heatmapBtn" onclick="toggleHeatmap()">
+        <i class="bi bi-thermometer-half me-1"></i><span id="heatmapBtnText">Enable Heat Map</span>
       </button>
       <button class="toggle-btn btn-secondary" onclick="window.location.href='/'">
         <i class="bi bi-house me-1"></i>Dashboard
@@ -517,11 +517,47 @@
       }, 300);
     }
 
-    // Toggle heatmap with animation
+    // Track heatmap state
+    let heatmapEnabled = false;
+
+    // On page load, fetch current heatmap state from backend
+    window.addEventListener('DOMContentLoaded', () => {
+      fetch('/camera_stats')
+        .then(res => res.json())
+        .then(stats => {
+          if (stats.heatmap_enabled !== undefined) {
+            heatmapEnabled = stats.heatmap_enabled;
+            updateHeatmapBtn();
+          }
+        })
+        .catch(() => {}); // ignore errors
+    });
+
+    function updateHeatmapBtn() {
+      const btn = document.getElementById('heatmapBtn');
+      const text = document.getElementById('heatmapBtnText');
+      if (heatmapEnabled) {
+        btn.classList.add('btn-danger');
+        btn.classList.remove('btn-primary');
+        text.textContent = "Disable Heat Map";
+      } else {
+        btn.classList.remove('btn-danger');
+        btn.classList.add('btn-primary');
+        text.textContent = "Enable Heat Map";
+      }
+    }
+
+    // Toggle heatmap with animation and update button text
     function toggleHeatmap() {
-      const btn = event.target;
+      const btn = document.getElementById('heatmapBtn');
       gsap.to(btn, { scale: 0.95, duration: 0.1, yoyo: true, repeat: 1 });
-      window.location.href = '/toggle_heatmap';
+      fetch('/toggle_heatmap')
+        .then(() => {
+          heatmapEnabled = !heatmapEnabled;
+          updateHeatmapBtn();
+          // Optionally, reload the video feed to reflect changes
+          document.getElementById('mainImage').src = "{{ url_for('video_feed') }}" + "?t=" + Date.now();
+        });
     }
 
     // Uptime counter
