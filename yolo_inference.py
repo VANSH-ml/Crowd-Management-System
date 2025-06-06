@@ -33,9 +33,11 @@ tracker = DeepSort(max_age=30, embedder="mobilenet")
 
 
 class YOLOInference:
-    def __init__(self, model_path="yolo11x.pt"):
+    def __init__(self, model_path="runs/detect/yolo11x_head12/weights/best.pt"):
         """Initialize YOLOv11 model and other settings."""
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
+
+        model_path = os.path.basename(model_path) if os.path.isabs(model_path) else model_path
         self.model = YOLO(model_path).to(self.device)
         print(f"[INFO] YOLOv11 model loaded on device: {self.device}")
 

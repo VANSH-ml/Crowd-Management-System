@@ -35,7 +35,7 @@ app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
 # Initialize YOLO
-yolo_infer = YOLOInference(model_path='yolo11x.pt')
+yolo_infer = YOLOInference(model_path='runs/detect/yolo11x_head12/weights/best.pt')
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
