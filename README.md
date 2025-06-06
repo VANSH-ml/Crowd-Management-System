@@ -4,6 +4,8 @@ Efficient Crowd Management for Events & Public Spaces
 *Real-time AI Surveillance, Safety Alerts, Data Analytics, Emergency Response, and Crowd Control with Heatmap Visualization and Tracking (YOLO11x)*
 
 ---
+> **Note:**  
+> We have **finetuned YOLO11x** for enhanced and precise tracking performance. The model was trained on a custom dataset of over **2000 images**, using a **batch size of 4**, **image size 1024**, and trained for **100 epochs** to optimize detection accuracy for crowd scenarios.
 
 ## Overview
 
@@ -38,8 +40,6 @@ CMS is an advanced crowd management platform designed to enhance safety, efficie
 
 ## Screenshots
 
-*(Please ensure your screenshot files are in a `screenshots` folder or update paths accordingly)*
-
 ![Main Dashboard](./templates/assets/dashboard.png) 
 ![Main Dashboard2](./templates/assets/dashboard2.png) 
 *Main dashboard with video upload and feature highlights*
@@ -52,6 +52,13 @@ CMS is an advanced crowd management platform designed to enhance safety, efficie
 
 ![Heatmap Overlay](./templates/assets/heatmap.png)  
 *Heatmap overlay visualizing crowd density*
+
+## Processed Video
+
+![Processed Video Preview](./templates/assets/processed%20video.png)  
+*Preview of the processed video with crowd detection and heatmap overlay*
+
+[▶️ Watch Processed Video](./static/processed/processed_input.mp4)
 
 ---
 
