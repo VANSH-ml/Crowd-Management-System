@@ -78,7 +78,7 @@ CMS is an advanced crowd management platform designed to enhance safety, efficie
 
 1.  **Clone the repository:**
     ```
-    git clone https://github.com/yourusername/crowd-management-system.git
+    git clone https://github.com/vik05h/crowd-management-system.git
     cd crowd-management-system
     ```
 
@@ -160,4 +160,5 @@ CMS is an advanced crowd management platform designed to enhance safety, efficie
 ---
 
 ## Example Code Snippet (Illustrative for Heatmap Logic)
+
 
